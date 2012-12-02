@@ -4,7 +4,7 @@
 ;; Author: Evan Izaksonas-Smith <izak0002 at umn dot edu>
 ;; Maintainer: Evan Izaksonas-Smith
 ;; Created: 1st Januay 2012
-;; Version: 0.0.1
+;; Version: 0.0.2
 ;; Keywords: lisp
 ;; Description: A simplified let-recur mechanic.
 
@@ -30,8 +30,8 @@
 
 ;;; Code:
 (defun let-recur--tc
-  "Utility function, not intended for external use."
-  (&rest args) (throw :recur args))
+  (&rest args) "Utility function, not intended for external use."
+  (throw :recur args))
 
 (defun let-recur--transform (form)
   "Blindly looks for :recur in the function slot of an sexp.
