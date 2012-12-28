@@ -29,6 +29,9 @@
 ;; for any case but strictly tail recursive self recursion.
 
 ;;; Code:
+(eval-when-compile
+  (require 'cl))
+
 (defun let-recur--tc
   (&rest args) "Utility function, not intended for external use."
   (throw :recur args))
@@ -54,20 +57,17 @@ in the body will yield undefined behavior."
   (setcar (last body)
           (let-recur--transform (car (last body))))
   (let ((arglist (mapcar #'first bindings))
-        (args (cl-gensym))
-        (real-call (cl-gensym)))
-    `(cl-labels
-         ((recur (&rest ,args)
-                 (let ((,real-call ,args))
-                   (catch :return
-                     (while t
-                       (setq ,real-call
-                             (catch :recur
-                               (throw :return
-                                      (apply (lambda ,arglist ,@body)
-                                             ,real-call)))))))))
-       (apply #'recur (list ,@(mapcar #'second bindings))))))
-
+        (args (gensym))
+        (real-call (gensym)))
+    `(let ((,args (list ,@(mapcar #'second bindings))))
+       (let ((,real-call ,args))
+         (catch :return
+           (while t
+             (setq ,real-call
+                   (catch :recur
+                     (throw :return
+                            (apply (lambda ,arglist ,@body)
+                                   ,real-call))))))))))
 
 (provide 'let-recur)
 ;;; let-recur.el ends here
