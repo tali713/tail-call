@@ -38,11 +38,11 @@ Will blithely transform it in places where it will break your
 code.  So don't put the keyword :recur in your code unless you
 are certain it is a tail call."
   (pcase form
-    (`(:recur . ,args)    
-     `(throw :recur (list ,@args)))
-    (`(,func . ,args)
-     `(,func ,@(mapcar 'let-recur--transform args)))
-    (_ form)))
+    ( `(:recur . ,args)    
+      `(throw :recur (list ,@args)))
+    ( `(,func . ,args)
+      `(,func ,@(mapcar 'let-recur--transform args)))
+    ( _ form)))
 
 (defmacro let-recur (bindings &rest body)
   "Like `let' but acts as a lambda named :recur, however :recur
