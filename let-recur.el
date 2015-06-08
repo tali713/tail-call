@@ -29,8 +29,6 @@
 ;; for any case but strictly tail recursive self recursion.
 
 ;;; Code:
-(eval-when-compile
-  (require 'cl))
 
 (defun let-recur--transform (form)
   "Blindly looks for :recur in the function slot of an sexp.
@@ -38,7 +36,7 @@ Will blithely transform it in places where it will break your
 code.  So don't put the keyword :recur in your code unless you
 are certain it is a tail call."
   (pcase form
-    ( `(:recur . ,args)    
+    ( `(:recur . ,args)
       `(throw :recur (list ,@args)))
     ( `(,func . ,args)
       `(,func ,@(mapcar 'let-recur--transform args)))
@@ -51,11 +49,11 @@ only suitable for recursive functions that are guaranteed to be
 strictly tail recursive.  Using the keyword :recur anywhere else
 in the body will yield undefined behavior."
   (declare (indent 2))
-  (setcar (last body)
-          (let-recur--transform (car (last body))))
-  (let ((arglist (mapcar #'first bindings))
-        (args (gensym "args")))
-    `(let ((,args (list ,@(mapcar #'second bindings))))
+  (setf (car (last body))
+	(let-recur--transform (car (last body))))
+  (let ((arglist (mapcar 'car bindings))
+        (args (make-symbol "args")))
+    `(let ((,args (list ,@(mapcar 'cadr bindings))))
        (catch :return
          (while t
            (setq ,args
@@ -72,10 +70,10 @@ strictly tail recursive.  Using the keyword :recur anywhere else
 in the body will yield undefined behavior."
   (declare (indent 1))
   (mapc (lambda (body)
-          (setcar (last body)
-                  (let-recur--transform (car (last body)))))
+          (setf (car (last body))
+		(let-recur--transform (car (last body)))))
         cases)
-  (let ((args (gensym "args")))
+  (let ((args (make-symbol "args")))
     `(let ((,args ,exp))
        (catch :return
          (while t
@@ -84,12 +82,26 @@ in the body will yield undefined behavior."
                    (throw :return
                           (pcase ,args ,@cases)))))))))
 
-;;; example:
+;;; examples:
 ;; (defun preverse (list)
 ;;   (pcase-recur `(,list)
 ;;     (`(nil ,reverse) reverse)
 ;;     (`((,head \, tail) ,reverse) (:recur tail `(,head ,@reverse)))
 ;;     (`(,sequence) (:recur sequence nil))))
+;;
+;;
+;; thanks to wasamasa:
+;; (defun factorial-lr (n)
+;;   (let-recur ((n n) (acc 1))
+;;       (cond
+;;        ((= 0 n) acc)
+;;        (t (:recur (1- n) (* acc n))))))
+;;
+;; (defun factorial-pr (n)
+;;     (pcase-recur `(,n 1)
+;;       (`(0 ,acc) acc)
+;;       (`(,n ,acc) (:recur (1- n) (* acc n)))))
+
 
 
 (provide 'let-recur)
